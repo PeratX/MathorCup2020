@@ -52,6 +52,9 @@ class Shelves(width: Int, height: Int) {
      * 如 calcDistance(S00101, S00102)
      */
     fun calcDistance(a: String, b: String): Int {
+        if (a.toUpperCase() == b.toUpperCase()) {
+            return 0
+        }
         var distance = 0
         when (getPositionType(a, b)) {
             PositionType.BOX_TO_BOX -> {
@@ -93,7 +96,7 @@ class Shelves(width: Int, height: Int) {
                     }
                 }
                 val wid = distance
-                println("宽度：$distance")
+                //println("宽度：$distance")
                 //计算高度
                 val absY = abs(shelfCoordA.y - shelfCoordB.y)
                 distance += if (absY == 0) {//同一个
@@ -110,7 +113,7 @@ class Shelves(width: Int, height: Int) {
                                 (boxB + SHELF_SIZE - boxA) * BOX_SIZE
                             }
                 }
-                println("高度：${distance - wid}")
+                //println("高度：${distance - wid}")
             }
             PositionType.BOX_TO_TABLE -> {
                 val table = tables[(if (a.getType() == BoxType.TABLE) a else b).getTable().toInt()]!! //复核台
@@ -123,7 +126,7 @@ class Shelves(width: Int, height: Int) {
                     val vx = boxCoord.x + (if (box.getShelf().isLeft()) -OFFSET else OFFSET) //在左面-75，在右面+75
                     val tx = table.x + TABLE_SIZE / 2 //复核台中点坐标x
                     distance += abs(vx - tx)
-                    println("宽度 $distance")
+                    //println("宽度 $distance")
                     val ty = table.y + TABLE_SIZE //复核台中点坐标y
                     distance += boxCoord.y - ty
                 } else {
@@ -131,9 +134,10 @@ class Shelves(width: Int, height: Int) {
                     if (!box.getShelf().isLeft()) {
                         distance += 2 * OFFSET //在右侧额外加两个750mm
                     }
-                    println("宽度 $distance")
-                    distance += if ((shelf.x == 1 && box.getShelf()
-                            .isLeft()) || (shelf.getTopY() < table.y || shelf.getBottomY() > table.y)
+                    //println("宽度 $distance")
+                    distance += if (
+                        (shelf.x == 1 && box.getShelf().isLeft()) ||
+                        (shelf.getTopY() < table.y || shelf.getBottomY() > table.y)
                     ) {
                         abs(boxCoord.y - (table.y + TABLE_SIZE / 2))
                     } else {
