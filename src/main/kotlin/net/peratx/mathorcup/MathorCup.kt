@@ -13,7 +13,9 @@ import kotlinx.coroutines.newFixedThreadPoolContext
 import java.io.File
 import kotlin.coroutines.CoroutineContext
 
-val s = Shelves(25, 4)
+object ShelfContainer {
+    val s = Shelves(25, 4)
+}
 
 fun main() {
     /*
@@ -28,10 +30,11 @@ fun main() {
     testCalc("S00106", "FH11", 7600)
     testCalc("S02103", "FH13", 8200 + 11000)
      */
-    generateCsv(false)
+    //generateCsv(false)
+    Solver().solve(testTaskGroup())
 }
 
-fun generateCsv(test: Boolean = false) {
+fun generateCsv(withHeader: Boolean = false) {
     val arr = HashMap<Int, String>()
     var cnt = 0
     for (i in 1..200) {
@@ -50,7 +53,7 @@ fun generateCsv(test: Boolean = false) {
             val myTask = task.getAndIncrement()
             var line = ""
             arr.values.forEach {
-                line += s.calcDistance(arr[myTask]!!, it).toString() + ","
+                line += ShelfContainer.s.calcDistance(arr[myTask]!!, it).toString() + ","
             }
             line = line.substring(0, line.length - 1)
             result[myTask] = line
@@ -62,18 +65,48 @@ fun generateCsv(test: Boolean = false) {
     }
     val file = File("result.csv")
     file.writeText("")
-    if (test) {
-        file.appendText("Head,")
+    if (withHeader) {
+        file.appendText("Header,")
         file.appendText(arr.values.joinToString(",") + "\n")
     }
     result.forEach { (k, v) ->
         println("Append Line $k")
-        if (test) {
+        if (withHeader) {
             file.appendText(arr[k] + ",")
         }
         file.appendText(v + "\n")
     }
 }
+
+fun testTaskGroup() =
+    getTaskGroup(
+        "T0001",
+        """
+        O0218	S08502	1
+        O0219	S13509	1
+        O0219	S14908	3
+        O0219	S12608	1
+        O0330	S10115	1
+        O0330	S07515	3
+        O0330	S15911	3
+        O0339	S07305	3
+        O0339	S13809	1
+        O0339	S13812	3
+        O0450	S13004	1
+        O0450	S14510	1
+        O0451	S11106	1
+        O0451	S07212	1
+        O0459	S00107	2
+        O0459	S10501	1
+        O0570	S06213	3
+        O0570	S11205	1
+        O0571	S10508	2
+        O0571	S01713	2
+        O0572	S01308	1
+        O0572	S12103	2
+        O0572	S14401	1
+    """.trimIndent()
+    )
 
 class Executor : CoroutineScope {
     val job = SupervisorJob()
@@ -81,9 +114,9 @@ class Executor : CoroutineScope {
 }
 
 fun testCalc(a: String, b: String, ans: Int) {
-    println("$a 到 $b 距离应为 $ans 计算为 " + s.calcDistance(a, b))
+    println("$a 到 $b 距离应为 $ans 计算为 " + ShelfContainer.s.calcDistance(a, b))
 }
 
 fun getCoord(a: String) {
-    println("$a 绝对坐标为 " + s.shelves[a.getShelf().getRealShelf()]!!.getCoordinate(a))
+    println("$a 绝对坐标为 " + ShelfContainer.s.shelves[a.getShelf().getRealShelf()]!!.getCoordinate(a))
 }
