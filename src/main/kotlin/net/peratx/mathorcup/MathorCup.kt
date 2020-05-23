@@ -18,6 +18,7 @@ object ShelfContainer {
 }
 
 fun main() {
+    //测试距离
     /*
     testCalc("S00913", "S00909", 4700)
     testCalc("S00913", "S01710", 12500)
@@ -30,8 +31,13 @@ fun main() {
     testCalc("S00106", "FH11", 7600)
     testCalc("S02103", "FH13", 8200 + 11000)
      */
+    //测试生成矩阵
     //generateCsv(false)
-    Solver().solve(testTaskGroup())
+    //测试寻找最短路径
+    //Solver().solve(testTaskGroup(), "FH10")
+    //RouteSolver().solve(testTaskGroup())
+    //测试时间
+    println("花费：" + calcTime(testTaskGroup(), 381000) + "秒")
 }
 
 fun generateCsv(withHeader: Boolean = false) {
@@ -119,4 +125,14 @@ fun testCalc(a: String, b: String, ans: Int) {
 
 fun getCoord(a: String) {
     println("$a 绝对坐标为 " + ShelfContainer.s.shelves[a.getShelf().getRealShelf()]!!.getCoordinate(a))
+}
+
+fun calcTime(group: TaskGroup, routeLen: Int): Double {
+    var time = routeLen / 1000 / 1.5 //路程/1.5m/s
+
+    group.tasks.forEach {
+        time += (if (it.cnt < 3) 5 else 4) * it.cnt //下架时间
+    }
+
+    return time + 30 //复核时间
 }

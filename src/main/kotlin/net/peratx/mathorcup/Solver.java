@@ -14,21 +14,24 @@ import java.util.stream.Collector;
  * MathorCup 2020参赛使用
  */
 class Solver {
-    void solve(TaskGroup group) {
-        var solver = new ProblemSolver(group);
+    void solve(TaskGroup group, String start) {
+        //构造问题实例
+        var solver = new ProblemSolver(group, start);
+        //构造遗传引擎
         var engine = Engine.builder(solver)
+                //设定适应度是越大还是越小好
                 .optimize(Optimize.MINIMUM) //适应度越小越好
-                .alterers(
-                        new SwapMutator<>(0.4),
-                        new PartiallyMatchedCrossover<>(0.96)
+                .alterers( //变化器
+                        new SwapMutator<>(0.4), //突变
+                        new PartiallyMatchedCrossover<>(0.96) //交叉
                 )
                 .build();
 
         System.out.println("代数\t个数\t平均适应度\t最佳适应度\t路径");
         engine.stream()
-                .flatMap(Streams.toIntervalMax(Duration.ofMillis(100)))
+                .flatMap(Streams.toIntervalMax(Duration.ofMillis(100))) //100毫秒输出一次结果
                 //.map(program -> program.bestPhenotype().genotype())
-                .forEach(best -> print(solver, best));
+                .forEach(best -> print(solver, best)); //输出函数
         /*
         var stat = EvolutionStatistics.ofNumber();
         var best = b.collect(toBestPhenotype());
@@ -70,16 +73,18 @@ class Solver {
     }
 
     static class ProblemSolver implements Problem<ISeq<Task>, EnumGene<Task>, Integer> {
-        private ISeq<Task> tasks;
+        private final ISeq<Task> tasks;
+        private final String start;
 
-        ProblemSolver(TaskGroup group) {
+        ProblemSolver(TaskGroup group, String start) {
             tasks = ISeq.of(group.getTasks());
+            this.start = start;
         }
 
         @Override
         public Function<ISeq<Task>, Integer> fitness() {
             //初始点
-            return route -> route.stream().collect(getCollector(new Task("0", "FH10", 0)));
+            return route -> route.stream().collect(getCollector(new Task("0", start, 0)));
         }
 
         @Override
