@@ -11,6 +11,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import java.io.File
+import kotlin.concurrent.thread
 import kotlin.coroutines.CoroutineContext
 
 object ShelfContainer {
@@ -34,27 +35,69 @@ fun main() {
     //测试生成矩阵
     //generateCsv(false)
     //测试寻找最短路径
-    //Solver().solve(testTaskGroup(), "FH10")
+    //Solver(getTaskGroup("T0001"), 10, Solver.DEFAULT_END).solve()
     //RouteSolver().solve(testTaskGroup())
     //测试时间
-    println("花费：" + calcTime(testTaskGroup(), 381000) + "秒")
+    //println("花费：" + calcTime(getTaskGroup("T0001")!!, 381000) + "秒")
+
+    //求最优解
+    gen15()
+}
+
+fun gen15() {
+    thread {
+        Solver(getTaskGroup("T0002"), 3, IntArray(1).apply { set(0, 3) }).solve()
+    }
+    thread {
+        Solver(getTaskGroup("T0002"), 3, IntArray(1).apply { set(0, 11) }).solve()
+    }
+    thread {
+        Solver(getTaskGroup("T0002"), 11, IntArray(1).apply { set(0, 11) }).solve()
+    }
+    thread {
+        Solver(getTaskGroup("T0003"), 3, IntArray(1).apply { set(0, 3) }).solve()
+    }
+    thread {
+        Solver(getTaskGroup("T0003"), 3, IntArray(1).apply { set(0, 11) }).solve()
+    }
+    thread {
+        Solver(getTaskGroup("T0003"), 11, IntArray(1).apply { set(0, 11) }).solve()
+    }
+    thread {
+        Solver(getTaskGroup("T0004"), 3, IntArray(1).apply { set(0, 3) }).solve()
+    }
+    thread {
+        Solver(getTaskGroup("T0004"), 3, IntArray(1).apply { set(0, 11) }).solve()
+    }
+    thread {
+        Solver(getTaskGroup("T0004"), 11, IntArray(1).apply { set(0, 11) }).solve()
+    }
+    thread {
+        Solver(getTaskGroup("T0005"), 3, IntArray(1).apply { set(0, 3) }).solve()
+    }
+    thread {
+        Solver(getTaskGroup("T0005"), 3, IntArray(1).apply { set(0, 11) }).solve()
+    }
+    thread {
+        Solver(getTaskGroup("T0005"), 11, IntArray(1).apply { set(0, 11) }).solve()
+    }
+    thread {
+        Solver(getTaskGroup("T0006"), 3, IntArray(1).apply { set(0, 3) }).solve()
+    }
+    thread {
+        Solver(getTaskGroup("T0006"), 3, IntArray(1).apply { set(0, 11) }).solve()
+    }
+    thread {
+        Solver(getTaskGroup("T0006"), 11, IntArray(1).apply { set(0, 11) }).solve()
+    }
 }
 
 fun generateCsv(withHeader: Boolean = false) {
-    val arr = HashMap<Int, String>()
-    var cnt = 0
-    for (i in 1..200) {
-        for (j in 1..15) {
-            arr[cnt++] = "S" + i.toString().padStart(3, '0') + j.toString().padStart(2, '0')
-        }
-    }
-    for (i in 1..13) {
-        arr[cnt++] = "FH" + i.toString().padStart(2, '0')
-    }
+    val arr = generateAbstractMap()
     val result = HashMap<Int, String>()
     val executor = Executor()
     val task = atomic(0)
-    for (i in 1..cnt) {
+    for (i in 1..arr.size) {
         executor.launch {
             val myTask = task.getAndIncrement()
             var line = ""
@@ -83,36 +126,6 @@ fun generateCsv(withHeader: Boolean = false) {
         file.appendText(v + "\n")
     }
 }
-
-fun testTaskGroup() =
-    getTaskGroup(
-        "T0001",
-        """
-        O0218	S08502	1
-        O0219	S13509	1
-        O0219	S14908	3
-        O0219	S12608	1
-        O0330	S10115	1
-        O0330	S07515	3
-        O0330	S15911	3
-        O0339	S07305	3
-        O0339	S13809	1
-        O0339	S13812	3
-        O0450	S13004	1
-        O0450	S14510	1
-        O0451	S11106	1
-        O0451	S07212	1
-        O0459	S00107	2
-        O0459	S10501	1
-        O0570	S06213	3
-        O0570	S11205	1
-        O0571	S10508	2
-        O0571	S01713	2
-        O0572	S01308	1
-        O0572	S12103	2
-        O0572	S14401	1
-    """.trimIndent()
-    )
 
 class Executor : CoroutineScope {
     val job = SupervisorJob()

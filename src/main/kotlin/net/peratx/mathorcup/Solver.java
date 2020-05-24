@@ -4,7 +4,10 @@ import io.jenetics.*;
 import io.jenetics.engine.*;
 import io.jenetics.util.ISeq;
 import io.jenetics.util.Streams;
+import kotlin.io.FilesKt;
+import kotlin.text.Charsets;
 
+import java.io.File;
 import java.time.Duration;
 import java.util.function.Function;
 import java.util.stream.Collector;
@@ -14,9 +17,29 @@ import java.util.stream.Collector;
  * MathorCup 2020参赛使用
  */
 class Solver {
-    void solve(TaskGroup group, String start) {
+    public static final int[] DEFAULT_END = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
+
+    public final TaskGroup group;
+    public final int start;
+    public final int[] end;
+    public final File file;
+
+    /**
+     * @param group 任务组
+     * @param start 起点复核台
+     * @param end   终点复核台数组
+     */
+    Solver(TaskGroup group, int start, int[] end) {
+        this.group = group;
+        this.start = start;
+        this.end = end;
+        this.file = new File(group.getGroup() + "_" + start + "_" + end[0]);
+        FilesKt.writeText(file, "", Charsets.UTF_8);
+    }
+
+    void solve() {
         //构造问题实例
-        var solver = new ProblemSolver(group, start);
+        var solver = new ProblemSolver(this);
         //构造遗传引擎
         var engine = Engine.builder(solver)
                 //设定适应度是越大还是越小好
@@ -27,9 +50,9 @@ class Solver {
                 )
                 .build();
 
-        System.out.println("代数\t个数\t平均适应度\t最佳适应度\t路径");
-        engine.stream()
-                .flatMap(Streams.toIntervalMax(Duration.ofMillis(100))) //100毫秒输出一次结果
+        FilesKt.appendText(file, "代数\t个数\t平均适应度\t最佳适应度\t路径\n", Charsets.UTF_8);
+        engine.stream().limit(1000_0000)
+                .flatMap(Streams.toIntervalMax(Duration.ofMillis(1000))) //100毫秒输出一次结果
                 //.map(program -> program.bestPhenotype().genotype())
                 .forEach(best -> print(solver, best)); //输出函数
         /*
@@ -52,17 +75,18 @@ class Solver {
             cnt++;
         }
 
-        System.out.print(b.generation() + "\t" + cnt + "\t" + Math.round(total / cnt) + "\t" + solver.fitness(best) + "\t");
+        var str = new StringBuilder(b.generation() + "\t" + cnt + "\t" + Math.round(total / cnt) + "\t" + solver.fitness(best) + "\t");
         for (var task : path) {
-            System.out.print(task.getBox() + ",");
+            str.append(task.getBox()).append(",");
         }
-        System.out.println(findNearestTable(path.get(path.size() - 1)));
+        str.append(findNearestTable(path.get(path.size() - 1))).append("\n");
+        FilesKt.appendText(file, str.toString(), Charsets.UTF_8);
     }
 
     String findNearestTable(Task task) {
         int min = Integer.MAX_VALUE;
         String table = "";
-        for (int i = 1; i <= 13; i++) {
+        for (var i : end) {
             var value = ShelfContainer.INSTANCE.getS().calcDistance(task.getBox(), "FH" + i);
             if (value < min) {
                 min = value;
@@ -74,17 +98,20 @@ class Solver {
 
     static class ProblemSolver implements Problem<ISeq<Task>, EnumGene<Task>, Integer> {
         private final ISeq<Task> tasks;
-        private final String start;
+        private final Solver solver;
 
-        ProblemSolver(TaskGroup group, String start) {
-            tasks = ISeq.of(group.getTasks());
-            this.start = start;
+        ProblemSolver(Solver solver) {
+            tasks = ISeq.of(solver.group.getTasks());
+            this.solver = solver;
         }
 
         @Override
         public Function<ISeq<Task>, Integer> fitness() {
             //初始点
-            return route -> route.stream().collect(getCollector(new Task("0", start, 0)));
+            return route -> route.stream().collect(getCollector(
+                    new Task("0", "FH" + solver.start, 0),
+                    solver.end
+            ));
         }
 
         @Override
@@ -92,9 +119,9 @@ class Solver {
             return Codecs.ofPermutation(tasks);
         }
 
-        private Collector<Task, ?, Integer> getCollector(Task task) {
+        private Collector<Task, ?, Integer> getCollector(Task task, int[] end) {
             return Collector.of(
-                    () -> new RouteCollector(task),
+                    () -> new RouteCollector(task, end),
                     RouteCollector::add,
                     RouteCollector::combine,
                     RouteCollector::length
@@ -105,9 +132,11 @@ class Solver {
     static class RouteCollector {
         private int length = 0;
         private Task lastTask;
+        private int[] end;
 
-        RouteCollector(Task initialTask) {
+        RouteCollector(Task initialTask, int[] end) {
             lastTask = initialTask;
+            this.end = end;
         }
 
         void add(Task task) {
@@ -125,7 +154,7 @@ class Solver {
 
         int findShortestReturnLength() {
             int min = Integer.MAX_VALUE;
-            for (int i = 1; i <= 13; i++) {
+            for (var i : end) {
                 min = Math.min(min, ShelfContainer.INSTANCE.getS().calcDistance(lastTask.getBox(), "FH" + i));
             }
             return min;

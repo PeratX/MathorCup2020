@@ -1,7 +1,15 @@
+/**
+ * 版权所有（C）2020 PeratX@iTXTech.org
+ * MathorCup 2020参赛使用
+ *
+ * 此文件用于生成表格和读入运算数据
+ */
+
 package net.peratx.mathorcup
 
 import java.io.File
 
+/*
 val data = """
     2230	50	744780	476800	S00107,S12103,S13004,S14510,S13809,S13812,S12608,S11106,S11205,S13509,S15911,S14401,S14908,S10115,S07212,S06213,S07515,S08502,S01308,S01713,S07305,S10501,S10508,FH8
     4439	50	772534	445200	S00107,S12103,S13004,S13809,S13812,S14510,S14908,S14401,S15911,S13509,S12608,S11205,S11106,S10115,S07212,S06213,S08502,S07515,S01308,S01713,S07305,S10501,S10508,FH8
@@ -399,10 +407,109 @@ val data2 = """
     80258	50	704108	381000	S00107,S01713,S01308,S07515,S08502,S06213,S07212,S10115,S11106,S11205,S12608,S13509,S15911,S14401,S14908,S14510,S13812,S13809,S13004,S12103,S10508,S10501,S07305,FH7
     80520	50	727282	381000	S00107,S01713,S01308,S07515,S08502,S06213,S07212,S10115,S11106,S11205,S12608,S13509,S15911,S14401,S14908,S14510,S13812,S13809,S13004,S12103,S10508,S10501,S07305,FH7
 """.trimIndent()
+*/
 
-fun main() {
-    val file = File("info2.csv").apply { writeText("") }
-    data2.split("\n").forEach { line ->
+fun toCsv() {
+    val file = File("info3.csv").apply { writeText("") }
+    File("data.txt").readText().split("\n").forEach { line ->
         file.appendText(line.split("\t").joinToString(separator = ",", limit = 4, truncated = "") + "\n")
     }
+}
+
+fun scanBestResults(): HashMap<String, ArrayList<BestResult>> {
+    val map = HashMap<String, ArrayList<BestResult>>()
+    File(".").listFiles()?.forEach {
+        if (it.name.startsWith("T000")) {
+            var min = Int.MAX_VALUE
+            var path = ""
+            var cnt = 0
+            it.readText().split("\n").forEachIndexed { line, t ->
+                if (line > 0) {
+                    val data = t.split("\t")
+                    if (data.size > 4) {//最佳适应度小于min
+                        if (data[3].toInt() < min) {
+                            min = data[3].toInt()
+                            path = data[4]
+                            cnt = 1
+                        } else if (data[3].toInt() == min) {
+                            cnt++
+                        }
+                    }
+                }
+            }
+            val name = it.name.split("_")
+            if (!map.containsKey(name[0])) {
+                map[name[0]] = ArrayList()
+            }
+            map[name[0]]!! += BestResult(name[0], name[1].toInt(), name[2].toInt(), cnt, min, path)
+            //println(it.name + "\t出现次数：" + cnt + "\t最佳适应度：" + min + "\t路径：" + path)
+        }
+    }
+    return map
+}
+
+fun generateAbstractMap(): HashMap<Int, String> {
+    val arr = HashMap<Int, String>()
+    var cnt = 0
+    for (i in 1..200) {
+        for (j in 1..15) {
+            arr[cnt++] = "S" + i.toString().padStart(3, '0') + j.toString().padStart(2, '0')
+        }
+    }
+    for (i in 1..13) {
+        arr[cnt++] = "FH" + i.toString().padStart(2, '0')
+    }
+    return arr
+}
+
+fun genReverseMap(): HashMap<String, Int> {
+    val arr = HashMap<String, Int>()
+    var cnt = 1
+    for (i in 1..200) {
+        for (j in 1..15) {
+            arr["S" + i.toString().padStart(3, '0') + j.toString().padStart(2, '0')] = cnt++
+        }
+    }
+    for (i in 1..13) {
+        arr["FH" + i.toString().padStart(2, '0')] = cnt++
+    }
+    return arr
+}
+
+fun genCsvFromRoute(
+    path: String,
+    taskGroup: TaskGroup,
+    file: File = File("route.csv").apply { writeText("") },
+    header: String = ""
+) {
+    val map = genReverseMap()
+    path.split(",").forEach {
+        val realName = it.regulate()
+        file.appendText(
+            (if (realName.startsWith("FH")) (if (header != "") "," else "") else header) +
+                    realName + "," + map[realName] + "," + taskGroup.tasks.findTask(realName) + "\n"
+        )
+    }
+}
+
+fun ArrayList<Task>.findTask(key: String): Int {
+    forEach {
+        if (it.box == key) {
+            return it.cnt
+        }
+    }
+    return 0
+}
+
+fun String.regulate(): String {
+    return if (startsWith("FH")) ("FH" + replace("FH", "").padStart(2, '0')) else this
+}
+
+fun main() {
+    //scanBestResults()
+
+    genCsvFromRoute(
+        "S00107,S01713,S01308,S08502,S07515,S06213,S07212,S10115,S11106,S11205,S12608,S13509,S15911,S14401,S14908,S14510,S13812,S13809,S13004,S12103,S10501,S10508,S07305,FH7",
+        getTaskGroup("T0001")!!
+    )
 }
