@@ -428,8 +428,8 @@ fun allResultsToCsv() {
 
 fun scanBestResults(): HashMap<String, ArrayList<BestResult>> {
     val map = HashMap<String, ArrayList<BestResult>>()
-    File("routedata").listFiles()?.forEach {
-        if (it.name.startsWith("T000")) {
+    File("C:\\temp\\mathorcup\\routedata").listFiles()?.forEach {
+        if (it.name.startsWith("T")) {
             var min = Int.MAX_VALUE
             var path = ""
             var cnt = 0
@@ -452,6 +452,9 @@ fun scanBestResults(): HashMap<String, ArrayList<BestResult>> {
                 map[name[0]] = ArrayList()
             }
             map[name[0]]!! += BestResult(name[0], name[1].toInt(), name[2].toInt(), cnt, min, path)
+            if (name[1] != name[2]) {
+                map[name[0]]!! += BestResult(name[0], name[2].toInt(), name[1].toInt(), cnt, min, path)
+            }
             println(it.name + "\t出现次数：" + cnt + "\t最佳适应度：" + min + "\t路径：" + path)
         }
     }
