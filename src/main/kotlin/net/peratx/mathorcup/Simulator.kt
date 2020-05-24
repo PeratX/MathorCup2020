@@ -5,12 +5,14 @@
 
 package net.peratx.mathorcup
 
+import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.launch
 import java.io.File
 
 data class Worker(
     val route: ArrayList<String> = ArrayList(),
     var timeUsed: Double = 0.0,
-    val tasks: ArrayList<String> = ArrayList()
+    val tasks: ArrayList<BestResult> = ArrayList()
 ) {
     fun getEnd() =
         if (route.size == 0) {
@@ -18,6 +20,12 @@ data class Worker(
         } else {
             route[route.size - 1]
         }
+}
+
+fun HashMap<Int, Worker>.getAvgTime(): Double {
+    var t = 0.0
+    values.forEach { t += it.timeUsed }
+    return t / this.size
 }
 
 class Simulator(
@@ -40,7 +48,6 @@ class Simulator(
     }
 
     fun Worker.addTask(task: String) {
-        tasks += task
         if (getEnd() == "") { //如果是第一次走，则随机选一个
             route += ("FH" + findBestTable()).regulate()
         }
@@ -48,7 +55,7 @@ class Simulator(
         val end = getEnd().getTable().toInt()
         var min = Int.MAX_VALUE
         var r: BestResult? = null
-        bestResults[task]!!.forEach { //找耗时最短的任务
+        bestResults[task]!!.apply { tasks += this }.forEach { //找耗时最短的任务
             if (it.start == end) {
                 val waitTime = it.fitness.toTime() + tables.getWaitTime(it.end, timeUsed) //获取总时间
                 if (waitTime < min) {
@@ -103,13 +110,58 @@ class Simulator(
     }
 }
 
+fun HashMap<Int, Worker>.toCsv(file: File) {
+    file.writeText("")
+    val map = genReverseMap()
+    forEach { (id, worker) ->
+        worker.tasks.forEach { task ->
+            val group = getTaskGroup(task.task)!!
+            task.path.split(",").forEach { box ->
+                file.appendText(
+                    "P$id,${task.task},$box,${map[box.regulate()]}," +
+                            (if (box.startsWith("FH")) 0 else group.tasks.findTask(box.regulate())) + "\n"
+                )
+            }
+        }
+    }
+}
+
 fun main() {
-    val simulator = Simulator(9, arrayOf(1, 3, 10, 12).toIntArray(), File("routedata\\routedata.dat").readRouteData())
-    simulator.simulate()
-    simulator.workers.forEach {
-        println(
-            "工人：${it.key} 耗时：${it.value.timeUsed} 任务单：" +
-                    it.value.tasks.joinToString(", ") + " 路径：" + it.value.route.joinToString(", ")
-        )
+    var workers: HashMap<Int, Worker>? = null
+    val iteration = atomic(0)
+
+    Runtime.getRuntime().addShutdownHook(object : Thread() {
+        override fun run() {
+            println("迭代次数：$iteration")
+            println("平均时间：" + workers!!.getAvgTime())
+            workers!!.forEach { worker ->
+                val tasks = ArrayList<String>()
+                worker.value.tasks.forEach { tasks += it.task }
+                println(
+                    "工人：${worker.key} 耗时：${worker.value.timeUsed} 任务单：" +
+                            tasks.joinToString(", ") + " 路径：" + worker.value.route.joinToString(", ")
+                )
+            }
+            workers!!.toCsv(File("worker.csv"))
+        }
+    })
+
+    val executor = Executor()
+
+    val bestAvgTime = atomic(Double.MAX_VALUE)
+    while (true) {
+        executor.launch {
+            val simulator =
+                Simulator(9, arrayOf(1, 3, 10, 12).toIntArray(), File("routedata\\routedata.dat").readRouteData())
+            simulator.simulate()
+            val time = simulator.workers.getAvgTime()
+            if (time < bestAvgTime.value) {
+                bestAvgTime.getAndSet(time)
+                workers = simulator.workers
+                println("平均时间：" + bestAvgTime.value)
+            }
+            iteration.getAndIncrement()
+        }
+        Thread.sleep(1)
     }
 }
