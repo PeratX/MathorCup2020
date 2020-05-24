@@ -45,7 +45,7 @@ class Solver {
                 //设定适应度是越大还是越小好
                 .optimize(Optimize.MINIMUM) //适应度越小越好
                 .alterers( //变化器
-                        new SwapMutator<>(0.4), //突变
+                        new SwapMutator<>(0.2), //突变
                         new PartiallyMatchedCrossover<>(0.96) //交叉
                 )
                 .build();

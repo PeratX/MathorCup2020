@@ -14,7 +14,17 @@ data class Task(
 data class TaskGroup(
     val group: String,
     val tasks: ArrayList<Task> = ArrayList()
-)
+) {
+    fun getOrders(): ArrayList<String> {
+        val order = ArrayList<String>()
+        tasks.forEach {
+            if (!order.contains(it.order)) {
+                order += it.order
+            }
+        }
+        return order
+    }
+}
 
 fun getTaskGroup(grp: String) = map[grp]
 
@@ -1228,4 +1238,3 @@ val map = hashMapOf<String, TaskGroup>().apply {
         this[data[0]]!!.tasks += Task(data[1], data[2], data[3].toInt())
     }
 }
-
