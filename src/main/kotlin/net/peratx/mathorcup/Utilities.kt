@@ -7,7 +7,7 @@
 
 package net.peratx.mathorcup
 
-import java.io.File
+import java.io.*
 
 /*
 val data = """
@@ -409,16 +409,26 @@ val data2 = """
 """.trimIndent()
 */
 
-fun toCsv() {
-    val file = File("info3.csv").apply { writeText("") }
-    File("data.txt").readText().split("\n").forEach { line ->
-        file.appendText(line.split("\t").joinToString(separator = ",", limit = 4, truncated = "") + "\n")
+fun toCsv(f: File, csvName: String = "info3.csv", skipFirstLine: Boolean = false) {
+    val file = File(csvName).apply { writeText("") }
+    f.readText().split("\n").forEachIndexed { num, line ->
+        if ((skipFirstLine && num > 0) || !skipFirstLine) {
+            file.appendText(line.split("\t").joinToString(separator = ",", limit = 4, truncated = "") + "\n")
+        }
+    }
+}
+
+fun allResultsToCsv() {
+    File(".").listFiles()?.forEach {
+        if (it.name.startsWith("T000")) {
+            toCsv(it, "${it.name}.csv", true)
+        }
     }
 }
 
 fun scanBestResults(): HashMap<String, ArrayList<BestResult>> {
     val map = HashMap<String, ArrayList<BestResult>>()
-    File(".").listFiles()?.forEach {
+    File("routedata").listFiles()?.forEach {
         if (it.name.startsWith("T000")) {
             var min = Int.MAX_VALUE
             var path = ""
@@ -442,7 +452,7 @@ fun scanBestResults(): HashMap<String, ArrayList<BestResult>> {
                 map[name[0]] = ArrayList()
             }
             map[name[0]]!! += BestResult(name[0], name[1].toInt(), name[2].toInt(), cnt, min, path)
-            //println(it.name + "\t出现次数：" + cnt + "\t最佳适应度：" + min + "\t路径：" + path)
+            println(it.name + "\t出现次数：" + cnt + "\t最佳适应度：" + min + "\t路径：" + path)
         }
     }
     return map
@@ -505,11 +515,30 @@ fun String.regulate(): String {
     return if (startsWith("FH")) ("FH" + replace("FH", "").padStart(2, '0')) else this
 }
 
-fun main() {
-    //scanBestResults()
+fun HashMap<String, ArrayList<BestResult>>.save(file: File) {
+    val fos = FileOutputStream(file)
+    val oos = ObjectOutputStream(fos)
+    oos.writeObject(this)
+    oos.flush()
+    oos.close()
+    fos.close()
+}
 
-    genCsvFromRoute(
+fun File.readRouteData(): HashMap<String, ArrayList<BestResult>> {
+    val fis = FileInputStream(this)
+    val ois = ObjectInputStream(fis)
+    return (ois.readObject() as HashMap<String, ArrayList<BestResult>>).apply {
+        fis.close()
+    }
+}
+
+fun main() {
+    //scanBestResults().save(File("routedata\\routedata.dat"))
+    println(File("routedata\\routedata.dat").readRouteData())
+
+    /*genCsvFromRoute(
         "S00107,S01713,S01308,S08502,S07515,S06213,S07212,S10115,S11106,S11205,S12608,S13509,S15911,S14401,S14908,S14510,S13812,S13809,S13004,S12103,S10501,S10508,S07305,FH7",
         getTaskGroup("T0001")!!
-    )
+    )*/
+    //allResultsToCsv()
 }

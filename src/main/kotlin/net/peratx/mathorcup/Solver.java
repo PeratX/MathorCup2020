@@ -45,14 +45,14 @@ class Solver {
                 //设定适应度是越大还是越小好
                 .optimize(Optimize.MINIMUM) //适应度越小越好
                 .alterers( //变化器
-                        new SwapMutator<>(0.2), //突变
+                        new SwapMutator<>(0.4), //突变
                         new PartiallyMatchedCrossover<>(0.96) //交叉
                 )
                 .build();
 
         FilesKt.appendText(file, "代数\t个数\t平均适应度\t最佳适应度\t路径\n", Charsets.UTF_8);
         engine.stream().limit(1000_0000)
-                .flatMap(Streams.toIntervalMax(Duration.ofMillis(1000))) //100毫秒输出一次结果
+                .flatMap(Streams.toIntervalMax(Duration.ofMillis(100))) //100毫秒输出一次结果
                 //.map(program -> program.bestPhenotype().genotype())
                 .forEach(best -> print(solver, best)); //输出函数
         /*

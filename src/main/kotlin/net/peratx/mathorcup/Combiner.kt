@@ -8,6 +8,7 @@
 package net.peratx.mathorcup
 
 import java.io.File
+import java.io.Serializable
 
 data class BestResult(
     val task: String,
@@ -16,7 +17,7 @@ data class BestResult(
     val cnt: Int,
     val fitness: Int,
     val path: String
-)
+) : Serializable
 
 fun searchRoute(
     results: HashMap<String, ArrayList<BestResult>>,

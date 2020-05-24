@@ -38,14 +38,28 @@ fun main() {
     //Solver(getTaskGroup("T0001"), 10, Solver.DEFAULT_END).solve()
     //RouteSolver().solve(testTaskGroup())
     //测试时间
-    println("花费：" + calcTime(getTaskGroup("T0001")!!, 381000) + "秒")
+    //println("花费：" + calcTime(getTaskGroup("T0001")!!, 381000) + "秒")
 
     //求最优解
-    //gen15()
+    gen49()
+}
+
+fun gen49() {
+    val tables = arrayOf(1, 3, 10, 12)
+    for (i in 1..49) {
+        val group = getTaskGroup("T" + i.toString().padStart(4, '0'))
+        for (j in tables.indices) {
+            for (k in j until tables.size) {
+                thread {
+                    Solver(group, tables[j], IntArray(1).apply { set(0, tables[k]) }).solve()
+                }
+            }
+        }
+    }
 }
 
 fun gen15() {
-    thread {
+    /*thread {
         Solver(getTaskGroup("T0002"), 3, IntArray(1).apply { set(0, 3) }).solve()
     }
     thread {
@@ -89,7 +103,7 @@ fun gen15() {
     }
     thread {
         Solver(getTaskGroup("T0006"), 11, IntArray(1).apply { set(0, 11) }).solve()
-    }
+    }*/
 }
 
 fun generateCsv(withHeader: Boolean = false) {
@@ -112,11 +126,12 @@ fun generateCsv(withHeader: Boolean = false) {
     while (!executor.job.children.none()) {
         Thread.sleep(100)
     }
-    val file = File("result.csv")
-    file.writeText("")
-    if (withHeader) {
-        file.appendText("Header,")
-        file.appendText(arr.values.joinToString(",") + "\n")
+    val file = File("result.csv").apply {
+        writeText("")
+        if (withHeader) {
+            appendText("Header,")
+            appendText(arr.values.joinToString(",") + "\n")
+        }
     }
     result.forEach { (k, v) ->
         println("Append Line $k")
