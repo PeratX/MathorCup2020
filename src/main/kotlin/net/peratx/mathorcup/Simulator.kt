@@ -14,7 +14,8 @@ import java.io.File
 data class Worker(
     val route: ArrayList<String> = ArrayList(),
     var timeUsed: Double = 0.0,
-    val tasks: ArrayList<BestResult> = ArrayList()
+    val tasks: ArrayList<BestResult> = ArrayList(),
+    var waitTable: Double = 0.0
 ) {
     fun getEnd() =
         if (route.size == 0) {
@@ -24,10 +25,34 @@ data class Worker(
         }
 }
 
+data class TableT(
+    var time: Double = 0.0,
+    var used: Double = 0.0
+) {
+    fun getWaitTime(now: Double) = //获取等待时间
+        if (time > now) {
+            time - now
+        } else {
+            0.0
+        }
+}
+
 fun HashMap<Int, Worker>.getAvgTime(): Double {
     var t = 0.0
     values.forEach { t += it.timeUsed }
     return t / this.size
+}
+
+fun HashMap<Int, Worker>.getWorst(): Worker {
+    var time = 0.0
+    var worker: Worker? = null
+    values.forEach {
+        if (it.timeUsed > time) {
+            time = it.timeUsed
+            worker = it
+        }
+    }
+    return worker!!
 }
 
 class Simulator(
@@ -39,7 +64,7 @@ class Simulator(
             this[i] = Worker()
         }
     }
-    val tables = hashMapOf<Int, Double>().apply { t.forEach { this[it] = 0.0 } }
+    val tables = hashMapOf<Int, TableT>().apply { t.forEach { this[it] = TableT() } }
 
     fun simulate() {
         val tasks = ArrayList(bestResults.keys)
@@ -55,30 +80,33 @@ class Simulator(
         }
         //找时间最短的路
         val end = getEnd().getTable().toInt()
-        var min = Int.MAX_VALUE
+        var min = Double.MAX_VALUE
+        var wait = 0.0
         var r: BestResult? = null
-        bestResults[task]!!.apply { tasks += this }.forEach { //找耗时最短的任务
+        bestResults[task]!!.forEach { //找耗时最短的任务
             if (it.start == end) {
-                val waitTime = it.fitness.toTime() + tables.getWaitTime(it.end, timeUsed) //获取总时间
+                val routeTime = it.fitness.toTime()
+                val waitAtTable = tables[it.end]!!.getWaitTime(timeUsed + routeTime)
+                val waitTime = routeTime + waitAtTable //获取总时间
                 if (waitTime < min) {
-                    min = it.fitness
+                    min = waitTime
                     r = it
+                    wait = waitAtTable
                 }
             }
         }
         val route = r!!
+        tasks += route
         route.path.split(",").forEach { this.route += it }
         //tasks += ("FH" + route.end).regulate()
         timeUsed += min
-        tables[route.end] = timeUsed + getTaskGroup(route.task)!!.getOrders().size * 30 //复核台的占用时间
-    }
-
-    fun HashMap<Int, Double>.getWaitTime(k: Int, now: Double) = //获取等待时间
-        if (this[k]!! > now) {
-            this[k]!! - now
-        } else {
-            0.0
+        waitTable += wait
+        val usingTime = getTaskGroup(route.task)!!.getOrders().size * 30
+        tables[route.end]!!.apply {
+            time = timeUsed + usingTime //复核台的占用时间
+            used += usingTime //利用时间
         }
+    }
 
     fun Int.toTime(): Double {
         return this / 1000 / 1.5
@@ -88,11 +116,11 @@ class Simulator(
         var min = Double.MAX_VALUE
         val table = ArrayList<Int>()
         tables.forEach {
-            if (it.value < min) {
-                min = it.value
+            if (it.value.time < min) {
+                min = it.value.time
                 table.clear()
             }
-            if (it.value == min) {
+            if (it.value.time == min) {
                 table += it.key
             }
         }
@@ -129,37 +157,44 @@ fun HashMap<Int, Worker>.toCsv(file: File) {
 }
 
 fun main() {
-    var wrk: HashMap<Int, Worker>? = null
+    var simulator: Simulator? = null
     val iteration = atomic(0)
 
     Runtime.getRuntime().addShutdownHook(object : Thread() { //ctrl+c退出自动生成
         override fun run() {
+            val sim = simulator!!
             println("迭代次数：$iteration")
-            println("平均时间：" + wrk!!.getAvgTime())
-            wrk!!.forEach { worker ->
+            val worst = sim.workers.getWorst()
+            println("最差时间：" + worst.timeUsed)
+            val time = worst.timeUsed + getTaskGroup(worst.tasks[worst.tasks.size - 1].task)!!.getOrders().size * 30
+            println("总耗时：$time")
+            sim.tables.forEach { (idx, table) ->
+                println("FH$idx 忙时间：${table.used}秒 利用率：" + ((table.used / time) * 100) + "%")
+            }
+            sim.workers.forEach { worker ->
                 val tasks = ArrayList<String>()
                 worker.value.tasks.forEach { tasks += it.task }
                 println(
-                    "工人：${worker.key} 耗时：${worker.value.timeUsed} 任务单：" +
+                    "工人：${worker.key} 等待复核台：${worker.value.waitTable}秒 耗时：${worker.value.timeUsed}秒 任务单：" +
                             tasks.joinToString(", ") + " 路径：" + worker.value.route.joinToString(", ")
                 )
             }
-            wrk!!.toCsv(File("worker.csv"))
+            sim.workers.toCsv(File("worker.csv"))
         }
     })
 
     val executor = Executor()//协程
 
-    val bestAvgTime = atomic(Double.MAX_VALUE)
+    val worstTime = atomic(Double.MAX_VALUE)
     while (true) {
         executor.launch {
             Simulator(9, arrayOf(1, 3, 10, 12).toIntArray(), File("routedata\\routedata.dat").readRouteData()).apply {
                 simulate()
-                val time = workers.getAvgTime()
-                if (time < bestAvgTime.value) {
-                    bestAvgTime.getAndSet(time)
-                    wrk = workers
-                    println("平均时间：" + bestAvgTime.value)
+                val time = workers.getWorst().timeUsed
+                if (time < worstTime.value) {
+                    worstTime.getAndSet(time)
+                    simulator = this
+                    println("最差时间：" + worstTime.value)
                 }
             }
             iteration.getAndIncrement()
