@@ -2,7 +2,7 @@
  * 版权所有（C）2020 PeratX@iTXTech.org
  * MathorCup 2020参赛使用
  *
- * 此文件用于组合结果并评估
+ * 第三问：此文件用于组合结果并评估
  */
 
 package net.peratx.mathorcup

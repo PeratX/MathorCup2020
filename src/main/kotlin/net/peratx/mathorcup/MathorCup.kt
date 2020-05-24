@@ -1,6 +1,8 @@
 /**
  * 版权所有（C）2020 PeratX@iTXTech.org
  * MathorCup 2020参赛使用
+ *
+ * 第一问：生成表格等
  */
 
 package net.peratx.mathorcup

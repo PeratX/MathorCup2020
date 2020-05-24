@@ -1,6 +1,8 @@
 /**
  * 版权所有（C）2020 PeratX@iTXTech.org
  * MathorCup 2020参赛使用
+ *
+ * 第四问：带有随机性的贪心算法
  */
 
 package net.peratx.mathorcup
@@ -127,14 +129,14 @@ fun HashMap<Int, Worker>.toCsv(file: File) {
 }
 
 fun main() {
-    var workers: HashMap<Int, Worker>? = null
+    var wrk: HashMap<Int, Worker>? = null
     val iteration = atomic(0)
 
-    Runtime.getRuntime().addShutdownHook(object : Thread() {
+    Runtime.getRuntime().addShutdownHook(object : Thread() { //ctrl+c退出自动生成
         override fun run() {
             println("迭代次数：$iteration")
-            println("平均时间：" + workers!!.getAvgTime())
-            workers!!.forEach { worker ->
+            println("平均时间：" + wrk!!.getAvgTime())
+            wrk!!.forEach { worker ->
                 val tasks = ArrayList<String>()
                 worker.value.tasks.forEach { tasks += it.task }
                 println(
@@ -142,23 +144,23 @@ fun main() {
                             tasks.joinToString(", ") + " 路径：" + worker.value.route.joinToString(", ")
                 )
             }
-            workers!!.toCsv(File("worker.csv"))
+            wrk!!.toCsv(File("worker.csv"))
         }
     })
 
-    val executor = Executor()
+    val executor = Executor()//协程
 
     val bestAvgTime = atomic(Double.MAX_VALUE)
     while (true) {
         executor.launch {
-            val simulator =
-                Simulator(9, arrayOf(1, 3, 10, 12).toIntArray(), File("routedata\\routedata.dat").readRouteData())
-            simulator.simulate()
-            val time = simulator.workers.getAvgTime()
-            if (time < bestAvgTime.value) {
-                bestAvgTime.getAndSet(time)
-                workers = simulator.workers
-                println("平均时间：" + bestAvgTime.value)
+            Simulator(9, arrayOf(1, 3, 10, 12).toIntArray(), File("routedata\\routedata.dat").readRouteData()).apply {
+                simulate()
+                val time = workers.getAvgTime()
+                if (time < bestAvgTime.value) {
+                    bestAvgTime.getAndSet(time)
+                    wrk = workers
+                    println("平均时间：" + bestAvgTime.value)
+                }
             }
             iteration.getAndIncrement()
         }

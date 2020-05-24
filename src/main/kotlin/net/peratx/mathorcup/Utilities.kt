@@ -452,7 +452,7 @@ fun scanBestResults(): HashMap<String, ArrayList<BestResult>> {
                 map[name[0]] = ArrayList()
             }
             map[name[0]]!! += BestResult(name[0], name[1].toInt(), name[2].toInt(), cnt, min, path)
-            if (name[1] != name[2]) {
+            if (name[1] != name[2]) { //首尾不同的路线颠倒一下加进解集
                 map[name[0]]!! += BestResult(name[0], name[2].toInt(), name[1].toInt(), cnt, min, path)
             }
             println(it.name + "\t出现次数：" + cnt + "\t最佳适应度：" + min + "\t路径：" + path)
@@ -518,6 +518,7 @@ fun String.regulate(): String {
     return if (startsWith("FH")) ("FH" + replace("FH", "").padStart(2, '0')) else this
 }
 
+//将所有最佳路线持久化
 fun HashMap<String, ArrayList<BestResult>>.save(file: File) {
     val fos = FileOutputStream(file)
     val oos = ObjectOutputStream(fos)
@@ -527,6 +528,7 @@ fun HashMap<String, ArrayList<BestResult>>.save(file: File) {
     fos.close()
 }
 
+//读取持久化的最佳路线表
 fun File.readRouteData(): HashMap<String, ArrayList<BestResult>> {
     val fis = FileInputStream(this)
     val ois = ObjectInputStream(fis)

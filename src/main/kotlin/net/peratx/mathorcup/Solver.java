@@ -15,6 +15,8 @@ import java.util.stream.Collector;
 /**
  * 版权所有（C）2020 PeratX@iTXTech.org
  * MathorCup 2020参赛使用
+ * <p>
+ * 遗传算法实现
  */
 class Solver {
     public static final int[] DEFAULT_END = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};

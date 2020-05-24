@@ -1,6 +1,8 @@
 /**
  * 版权所有（C）2020 PeratX@iTXTech.org
  * MathorCup 2020参赛使用
+ *
+ * 第一问：最优路径长度计算
  */
 
 package net.peratx.mathorcup
