@@ -38,10 +38,10 @@ fun main() {
     //Solver(getTaskGroup("T0001"), 10, Solver.DEFAULT_END).solve()
     //RouteSolver().solve(testTaskGroup())
     //测试时间
-    //println("花费：" + calcTime(getTaskGroup("T0001")!!, 381000) + "秒")
+    println("花费：" + calcTime(getTaskGroup("T0001")!!, 381000) + "秒")
 
     //求最优解
-    gen15()
+    //gen15()
 }
 
 fun gen15() {
@@ -144,8 +144,8 @@ fun calcTime(group: TaskGroup, routeLen: Int): Double {
     var time = routeLen / 1000 / 1.5 //路程/1.5m/s
 
     group.tasks.forEach {
-        time += (if (it.cnt < 3) 5 else 4) * it.cnt //下架时间
+        time += (if (it.cnt < 3) 5 else 4) * it.cnt + 30//下架时间
     }
 
-    return time + 30 //复核时间
+    return time //复核时间
 }

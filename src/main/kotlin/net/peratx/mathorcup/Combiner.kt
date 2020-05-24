@@ -77,11 +77,24 @@ fun main() {
     //输出表格
     val file = File("route2.csv").apply { writeText("") }
     val map = genReverseMap()
-    val start = ("FH" + bestResult[bestResult.size - 1][0].start).regulate()
+    val route = bestResult[bestResult.size - 1]
+    val start = ("FH" + route[0].start).regulate()
     file.appendText("," + start + "," + map[start] + ",0\n")
-    bestResult[bestResult.size - 1].forEach {
+    route.forEach {
         //val end = ("FH" + it.end).regulate()
         genCsvFromRoute(it.path, getTaskGroup(it.task)!!, file, it.task + ",")
     }
+    //should be 872
+    println("耗时：" + calcRouteTotalTime(route))
+}
 
+fun calcRouteTotalTime(route: ArrayList<BestResult>): Double {
+    var total = 0
+    route.forEach { total += it.fitness }
+    var time = total / 1000 / 1.5
+    println("路程耗时：$time")
+    route.forEach {
+        time += calcTime(getTaskGroup(it.task)!!, 0)
+    }
+    return time
 }
