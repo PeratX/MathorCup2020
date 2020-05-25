@@ -428,7 +428,15 @@ fun allResultsToCsv() {
 
 fun scanBestResults(): HashMap<String, ArrayList<BestResult>> {
     val map = HashMap<String, ArrayList<BestResult>>()
-    File("C:\\temp\\mathorcup\\routedata").listFiles()?.forEach {
+    //把文件放到固态跑得快
+    File("archive").listFiles()?./*filter { file-> //用于测试3个的情况
+        arrayOf("1_1", "1_3", "1_10", "3_3", "3_10", "10_10").forEach {
+            if (file.name.endsWith(it)){
+                return@filter true
+            }
+        }
+        return@filter false
+    }?.*/forEach {
         if (it.name.startsWith("T")) {
             var min = Int.MAX_VALUE
             var path = ""
@@ -453,7 +461,9 @@ fun scanBestResults(): HashMap<String, ArrayList<BestResult>> {
             }
             map[name[0]]!! += BestResult(name[0], name[1].toInt(), name[2].toInt(), cnt, min, path)
             if (name[1] != name[2]) { //首尾不同的路线颠倒一下加进解集
-                map[name[0]]!! += BestResult(name[0], name[2].toInt(), name[1].toInt(), cnt, min, path)
+                val p = ArrayList(path.split(","))
+                p[p.size - 1] = ("FH" + name[1]).regulate()
+                map[name[0]]!! += BestResult(name[0], name[2].toInt(), name[1].toInt(), cnt, min, p.joinToString(","))
             }
             println(it.name + "\t出现次数：" + cnt + "\t最佳适应度：" + min + "\t路径：" + path)
         }
@@ -538,8 +548,8 @@ fun File.readRouteData(): HashMap<String, ArrayList<BestResult>> {
 }
 
 fun main() {
-    //scanBestResults().save(File("routedata\\routedata.dat"))
-    println(File("routedata\\routedata.dat").readRouteData())
+    scanBestResults().save(File("routedata\\routedata.dat"))
+    //println(File("routedata\\routedata.dat").readRouteData())
 
     /*genCsvFromRoute(
         "S00107,S01713,S01308,S08502,S07515,S06213,S07212,S10115,S11106,S11205,S12608,S13509,S15911,S14401,S14908,S14510,S13812,S13809,S13004,S12103,S10501,S10508,S07305,FH7",

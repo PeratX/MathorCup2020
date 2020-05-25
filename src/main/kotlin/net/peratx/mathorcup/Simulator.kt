@@ -175,7 +175,7 @@ fun main() {
                 val tasks = ArrayList<String>()
                 worker.value.tasks.forEach { tasks += it.task }
                 println(
-                    "工人：${worker.key} 等待复核台：${worker.value.waitTable}秒 耗时：${worker.value.timeUsed}秒 任务单：" +
+                    "工人：${worker.key + 1} 等待复核台：${worker.value.waitTable}秒 耗时：${worker.value.timeUsed}秒 任务单：" +
                             tasks.joinToString(", ") + " 路径：" + worker.value.route.joinToString(", ")
                 )
             }
@@ -188,7 +188,7 @@ fun main() {
     val worstTime = atomic(Double.MAX_VALUE)
     while (true) {
         executor.launch {
-            Simulator(9, arrayOf(1, 3, 10, 12).toIntArray(), File("routedata\\routedata.dat").readRouteData()).apply {
+            Simulator(9, arrayOf(1, 3, 10, 12).toIntArray(), File("routedata\\routedata1.dat").readRouteData()).apply {
                 simulate()
                 val time = workers.getWorst().timeUsed
                 if (time < worstTime.value) {
